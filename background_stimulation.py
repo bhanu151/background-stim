@@ -221,14 +221,14 @@ def main():
     print()
     bg_proto_code = input(
         "Would you like to run background stimulation for\n\
-        1. PPF patterns\n 2. no PPF patterns\n 3. Wrap up experiment\
-        Enter option 1 or 2\n"
+        1. PPF patterns\n 2. no PPF patterns\n 3. Wrap up experiment\n\
+        Enter option 1 or 2 or 3\n"
     )
     while bg_proto_code != "1" and bg_proto_code != "2" and bg_proto_code != "3":
         print("Invalid input. Please retry!")
         bg_proto_code = input(
             "Would you like to run background stimulation for\n\
-            1. PPF patterns\n 2. no PPF patterns\n 3. Wrap up experiment\
+            1. PPF patterns\n 2. no PPF patterns\n 3. Wrap up experiment\n\
             Enter option 1 or 2 or 3\n"
         )
     if bg_proto_code == "1" or bg_proto_code == "2":

@@ -1,14 +1,12 @@
-from importlib import import_module
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-from PIL import Image
 import pyabf as abf
 import protocol_params as prm
 import sys
-import glob
+import seaborn as sns
 
 np.set_printoptions(threshold=sys.maxsize)
+sns.set_context("paper")
 
 
 def read_data(abf_data_file, patterns_data_file):
@@ -62,7 +60,7 @@ def calc_amplitude(trace, stim_type):
     )
 
 
-def identify_ppf_patterns(time, data, patterns):
+def identify_ppf_patterns(time, data, patterns, plot_flag=True):
     unique_patterns, unique_indices, inverse = np.unique(
         patterns, axis=0, return_index=True, return_inverse=True
     )
@@ -70,6 +68,16 @@ def identify_ppf_patterns(time, data, patterns):
     ind_amplitudes = []
     ppf_patterns = []
     no_ppf_patterns = []
+
+    if plot_flag:
+        figure = plt.figure(figsize=(6,10), constrained_layout=True)
+        spec = figure.add_gridspec(2, 1)
+        axa = figure.add_subplot(spec[0, 0])
+        axb = figure.add_subplot(spec[1, 0])
+
+        colors = sns.color_palette("husl", len(unique_patterns))
+        min_val = np.Inf 
+        max_val = np.NINF
 
     for p, pattern in enumerate(unique_patterns):
         paired_amplitudes.append([])
@@ -83,21 +91,43 @@ def identify_ppf_patterns(time, data, patterns):
             paired_amplitudes[p].append(calc_amplitude(data[sn], "opt-paired"))
         for sn in ind_sweep_numbers:
             ind_amplitudes[p].append(calc_amplitude(data[sn], "opt-ind"))
-        
+
         ppf_ratio = np.mean(paired_amplitudes[p] / np.mean(ind_amplitudes[p]))
         if ppf_ratio > prm.PPF_RATIO_THRESHOLD:
-           ppf_patterns.append(pattern) 
-        elif ppf_ratio >= prm.NO_PPF_RATIO_THRESHOLD and ppf_ratio<=1.0:
+            ppf_patterns.append(pattern)
+        elif ppf_ratio >= prm.NO_PPF_RATIO_THRESHOLD and ppf_ratio <= 1.0:
             no_ppf_patterns.append(pattern)
 
-        print(p, pattern, ppf_ratio)
+        print(f"pattern #{p}\tppf_ratio={ppf_ratio}")
+
+        if plot_flag:
+            axa.scatter(ind_amplitudes[p], paired_amplitudes[p], color=colors[p])
+
+            ind_mean = np.mean(ind_amplitudes[p])
+            ind_std = np.std(ind_amplitudes[p])
+            paired_mean = np.mean(paired_amplitudes[p])
+            paired_std = np.std(paired_amplitudes[p])
+            plt.errorbar(
+                ind_mean, paired_mean, xerr=ind_std, yerr=paired_std, color=colors[p]
+            )
+            min_val = np.min([min_val, np.min(ind_amplitudes[p]), np.min(paired_amplitudes[p])])
+            max_val = np.max([max_val, np.max(ind_amplitudes[p]), np.max(paired_amplitudes[p])])
+
         # plt.boxplot(ind_amplitudes[p], patch_artist=False, notch="True")
         # break
     # bp_paired = plt.boxplot(paired_amplitudes, patch_artist=True, notch="True", vert=0)
     # print(ind_amplitudes)
     # print(bp_ind["boxes"])
+    if plot_flag:
+        limits = [min_val, max_val]
+        axa.plot(limits, limits, color="k", ls="--")
+        axb.plot(limits, limits, color="k", ls="--")
+        axb.set_xlabel("Independent amplitude (pA)")
+        axa.set_ylabel("Paired amplitude (pA)")
+        axb.set_ylabel("Paired amplitude (pA)")
+        plt.savefig("ppf_mean_std.png")
+        plt.show()
     return ppf_patterns, no_ppf_patterns
-    
 
 
 def plot_traces(time_list, data_list, sweep_num=None):
@@ -109,8 +139,3 @@ def plot_traces(time_list, data_list, sweep_num=None):
         for sn in range(len(data_list)):
             plt.plot(time_list[sn], data_list[sn])
     plt.show()
-
-
-# time_points, raw_data, patterns = read_data()
-# plot_traces(time_points, raw_data)
-# identify_ppf_patterns(time_points, raw_data, patterns)
