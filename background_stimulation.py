@@ -4,7 +4,7 @@ from PIL import Image
 import protocol_params as prm
 import math
 import glob
-from PPF_analysis import read_data, identify_ppf_patterns
+from PPF_analysis import run_ppf_analysis
 
 
 def generate_stim_grid():
@@ -43,7 +43,7 @@ def generate_patterns(num_sq):
 
 
 def generate_images(patterns, images_path):
-    print(patterns[:5])
+    # print(patterns[:5])
     if not os.path.isdir(images_path):
         os.mkdir(images_path)
     else:
@@ -99,7 +99,7 @@ def generate_background_patterns(patterns, num_sq, num_repeats, num_patterns=Non
     for i in range(num_sq, n_spots + 1, num_sq):
         bg_patterns.append(spots[i - num_sq : i])
     bg_patterns = np.tile(np.array(bg_patterns), (num_repeats, 1, 1))
-    print(bg_patterns)
+    # print(bg_patterns)
     return bg_patterns
 
 
@@ -130,7 +130,7 @@ def search_for_file(data_path, file_type):
                 print("File not found. Try again.")
                 continue
             break
-    return data_file
+    return data_file.split("/")[-1]
 
 
 def run_ppf_batch(data_path, experiment_name, patterns_batch, batch_num):
@@ -146,8 +146,7 @@ def run_ppf_batch(data_path, experiment_name, patterns_batch, batch_num):
     abf_data_file = search_for_file(data_path, ".abf")
     print()
     patterns_data_file = search_for_file(data_path, ".npy")
-    time_points, raw_data, patterns = read_data(abf_data_file, patterns_data_file)
-    ppf, no_ppf = identify_ppf_patterns(time_points, raw_data, patterns)
+    ppf, no_ppf = run_ppf_analysis(data_path, abf_data_file, patterns_data_file)
     return ppf, no_ppf
 
 

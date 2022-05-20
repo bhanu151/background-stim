@@ -9,8 +9,8 @@ np.set_printoptions(threshold=sys.maxsize)
 sns.set_context("paper")
 
 
-def read_data(abf_data_file, patterns_data_file):
-    abf_data = abf.ABF(abf_data_file)
+def read_data(data_path, abf_file_name, patterns_file_name):
+    abf_data = abf.ABF(f"{data_path}/{abf_file_name}")
     raw_data = []
     time_points = []
     print(f"sweepCount {abf_data.sweepCount}")
@@ -19,7 +19,7 @@ def read_data(abf_data_file, patterns_data_file):
         time_points.append(abf_data.sweepX)
         raw_data.append(abf_data.sweepY)
 
-    patterns = np.load(patterns_data_file)
+    patterns = np.load(f"{data_path}/{patterns_file_name}")
     return time_points, raw_data, patterns
 
 
@@ -60,7 +60,7 @@ def calc_amplitude(trace, stim_type):
     )
 
 
-def identify_ppf_patterns(time, data, patterns, plot_flag=True):
+def identify_ppf_patterns(data_path, data, patterns, plot_flag):
     unique_patterns, unique_indices, inverse = np.unique(
         patterns, axis=0, return_index=True, return_inverse=True
     )
@@ -125,7 +125,7 @@ def identify_ppf_patterns(time, data, patterns, plot_flag=True):
         axb.set_xlabel("Independent amplitude (pA)")
         axa.set_ylabel("Paired amplitude (pA)")
         axb.set_ylabel("Paired amplitude (pA)")
-        plt.savefig("ppf_mean_std.png")
+        plt.savefig(f"{data_path}/ppf_scatter_mean_std.png")
         plt.show()
     return ppf_patterns, no_ppf_patterns
 
@@ -139,3 +139,9 @@ def plot_traces(time_list, data_list, sweep_num=None):
         for sn in range(len(data_list)):
             plt.plot(time_list[sn], data_list[sn])
     plt.show()
+
+
+def run_ppf_analysis(data_path, abf_file_name, npy_file_name, plot_flag = True):
+    _, data, patterns = read_data(data_path, abf_file_name, npy_file_name)
+    ppf_patterns, no_ppf_patterns = identify_ppf_patterns(data_path, data, patterns, plot_flag)
+    return ppf_patterns, no_ppf_patterns
